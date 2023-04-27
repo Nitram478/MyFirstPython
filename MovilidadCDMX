@@ -1,0 +1,386 @@
+#Empezamos cargando las librerias 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+import plotly.express as px
+
+
+#Seccion 1 Cargar los datos con pandas y read .csv
+
+datoscdmx = pd.read_csv("afluencia-preliminar-en-transporte-publico.xlsx-afluencia_diaria.csv")
+
+#tipo de datos y cantidad de datos nulos
+#se observa que afluencia_tarjeta es la columna con mas datos nulos y que el tipo de dato de fecha esta mal
+
+datoscdmx.info()
+
+#cual es el organismo mas utilizado
+#Cuenta todos los valores de la columna "organismo" = STC
+
+datoscdmx["organismo"].value_counts()
+
+
+#Cual es la linea de servicio mas utilizada = L1
+
+datoscdmx["linea_servicio"].value_counts()
+
+
+#Dia de la semana de mas uso del Transporte publico  = Martes, Jueves y Viernes
+
+# y por cuanto?  = 3 unidades de diferencia con el lunes
+datoscdmx["dia"]=datoscdmx["dia"].replace("Míercoles","Miércoles")
+datoscdmx["dia"].value_counts()
+
+#Se reemplaza la coma por "" 
+datoscdmx["afluencia_tarjeta"]=datoscdmx["afluencia_tarjeta"].str.replace(",","") 
+
+datoscdmx["afluencia_boleto"]=datoscdmx["afluencia_boleto"].str.replace(",","") 
+
+datoscdmx["afluencia_total_preliminar"]=datoscdmx["afluencia_total_preliminar"].str.replace(",","") 
+
+#Se combierte a numeric
+datoscdmx["afluencia_tarjeta"]= pd.to_numeric(datoscdmx["afluencia_tarjeta"])
+
+datoscdmx["afluencia_boleto"]= pd.to_numeric(datoscdmx["afluencia_boleto"])
+
+datoscdmx["afluencia_total_preliminar"]= pd.to_numeric(datoscdmx["afluencia_total_preliminar"])
+
+
+#Se comprueba que se cambiaron los valores
+#cuales son las columnas con mayor cantidad de datos nulos? afluencia_tarjeta , afluencia_boleto 
+datoscdmx.info()
+
+
+columnas_porcentaje=pd.DataFrame()
+
+
+#Data frame para el porcentaje de datos nulos
+
+columnas_porcentaje["Columnas"]= pd.DataFrame(datoscdmx.columns)
+
+
+#calculo del los valores nulos por columna
+datoscdmx["id"].isnull().sum()
+
+
+
+#Crear la segunda columna
+columnas_porcentaje["Porcentage"]= 0
+
+
+#calculo del porcentaje e agregar al data frame
+cont=0
+
+
+for i in datoscdmx:
+     
+     
+     #print(datoscdmx[i].isnull().sum() /len(datoscdmx[i])*100 )
+     #print(cont)
+     columnas_porcentaje["Porcentage"].iloc[cont]=datoscdmx[i].isnull().sum() /len(datoscdmx[i])*100
+     
+     cont+=1
+     
+     
+     columnas_porcentaje
+     
+     
+     
+     
+     #Se crea una grafica con las especificaciones mencionadas en la presentacion
+
+#X = COLUMNAS   -  Y = PORCENTAJE
+
+plt.rcParams["figure.figsize"] = (15,8) 
+plt.bar(columnas_porcentaje["Columnas"],columnas_porcentaje["Porcentage"])
+plt.xticks(rotation=60)
+
+plt.ylabel("Porcentage de Valores Nulos")
+
+plt.title("Comparacion de valores nulos en las diferentes Columnas")
+plt.show()
+
+
+#Se revisan los datos del data frame para ver que esta pasando con los datos nulos
+
+#Solo se ven valores nulos en afluencia 
+datoscdmx.head(20)
+
+
+#Solo se ven valores nulos en afluencia 
+datoscdmx.tail(20)
+
+
+
+    #Funcion para crear el data frame dependiendo del organismo especificado
+def data(organismo,valor):
+    
+
+    data= datoscdmx[datoscdmx[organismo]==valor]
+    return data
+    
+    
+    
+    #Se selecciona un organismo y se guarda el data frame en una variable
+data2= data("organismo","STC")
+    
+
+#Funcion para llenar los procentajes 
+cont2=0
+columnas_porcentaje2=columnas_porcentaje
+
+for i in data2:
+     
+     
+     #print(datoscdmx[i].isnull().sum() /len(datoscdmx[i])*100 )
+     #print(cont)
+     columnas_porcentaje2["Porcentage"].iloc[cont2]=data2[i].isnull().sum() /len(data2[i])*100
+     
+     cont2+=1
+     
+     
+     #Data frame 
+columnas_porcentaje2
+
+
+
+#Se crea una grafica con las especificaciones mencionadas en la presentacion
+
+#X = COLUMNAS   -  Y = PORCENTAJE
+
+plt.rcParams["figure.figsize"] = (15,8) 
+plt.bar(columnas_porcentaje2["Columnas"],columnas_porcentaje2["Porcentage"])
+plt.xticks(rotation=60)
+
+plt.ylabel("Porcentage de Valores Nulos")
+
+plt.title("Comparacion de valores nulos en las diferentes Columnas")
+plt.show()
+
+
+#funcion para crear el data frame automaticamente
+
+
+def data3(columna,valor):
+    
+    dataframe_nulo=datoscdmx[columna].isnull()
+    dataframe_nulo
+
+    datos_cdmxnulos= pd.read_csv("afluencia-preliminar-en-transporte-publico.xlsx-afluencia_diaria.csv")
+    datos_cdmxnulos[columna]=dataframe_nulo
+    data3= datos_cdmxnulos[datos_cdmxnulos[columna]==valor]
+    return data3
+    
+    
+    data4=data3("linea_servicio",True)
+data4
+    
+    
+
+#Cantidad de valores nulos atribuidos por organismo
+data5= data4.groupby("organismo")["linea_servicio"].sum().reset_index()
+data5["Porcentage"]=0
+data5
+
+data5["Porcentage"]=(data5["linea_servicio"]/len(data4))*100
+data5
+
+
+
+#Se crea una grafica con las especificaciones mencionadas en la presentacion
+
+#X = COLUMNAS   -  Y = PORCENTAJE
+
+plt.rcParams["figure.figsize"] = (15,8) 
+plt.bar(data5["organismo"],data5["Porcentage"])
+plt.xticks(rotation=60)
+
+plt.ylabel("Porcentage de Valores Nulos")
+
+plt.title("Comparacion de valores nulos en las diferentes Columnas")
+plt.show()
+
+#lo mismo pero para afluencia tarjeta
+
+data4=data3("afluencia_tarjeta",True)
+data5= data4.groupby("organismo")["afluencia_tarjeta"].sum().reset_index()
+data5["Porcentage"]=0
+
+data5["Porcentage"]=(data5["afluencia_tarjeta"]/len(data4))*100
+data5
+
+
+#Se crea una grafica con las especificaciones mencionadas en la presentacion
+
+#X = Organismos   -  Y = PORCENTAJE
+
+plt.rcParams["figure.figsize"] = (15,8) 
+plt.bar(data5["organismo"],data5["Porcentage"])
+plt.xticks(rotation=60)
+
+plt.ylabel("Porcentage de Valores Nulos")
+
+plt.title("Distribucion de los valores nulos de la columna afluencia_tarjeta a travez de los organismos")
+plt.show()
+
+#Aqui calculamos como se distribuyen las columnas **afluencia_tarjeta, afluencia_boleto y afluencia_total_preliminar**
+
+#Descripcion de afluencia_boleto
+
+#Promedio = mean      24466.079489
+
+#Se concentra ,mas en valores bajos
+
+datoscdmx["afluencia_boleto"].describe()
+
+
+
+#Descripcion de afluencia_tarjeta
+
+#Promedio = mean     1079.967622
+
+#Se concentra ,mas en valores bajos
+datoscdmx["afluencia_tarjeta"].describe()
+
+
+
+
+     #Descripcion de afluencia_total_preliminar
+
+#Promedio = mean      81567.402388
+
+#Se concentra ,mas en valores bajos
+datoscdmx["afluencia_total_preliminar"].describe()
+
+
+#crear un histograma de 40 bines para revisar la informacion de la columna
+plt.hist(datoscdmx["afluencia_boleto"],40, color='#F2AB6D', rwidth=0.55)
+
+
+plt.hist(datoscdmx["afluencia_tarjeta"],40, color='#F2AB6D', rwidth=0.55)
+
+
+plt.hist(datoscdmx["afluencia_total_preliminar"],40, color='#F2AB6D', rwidth=0.55)
+
+     
+#Crear Boxplot de las columnas afluencia_tarjeta, afluencia_boleto y afluencia_total_preliminar
+
+
+#Se crea el DATA FRAME nuevo para poder hacer el boxplot
+
+BOX = datoscdmx["afluencia_boleto"].reset_index()
+BOX["afluencia_tarjeta"]=datoscdmx["afluencia_tarjeta"]
+BOX["afluencia_total_preliminar"]=datoscdmx["afluencia_total_preliminar"]
+BOX=BOX.drop("index",axis=1)
+BOX.describe()
+
+
+
+#Se grafica el boxplot
+
+sns.boxenplot(BOX)
+
+
+#Heat map de Dia vs Organismo con la suma de Afluencia_Total_Preliminar
+fig= px.density_heatmap(datoscdmx,datoscdmx["dia"],datoscdmx["organismo"],datoscdmx["afluencia_total_preliminar"])
+fig.show()
+
+
+#Heat map de Organismo vs Linea_Servicio con la suma de Afluencia_Total_Preliminar
+fig2= px.density_heatmap(datoscdmx,datoscdmx["organismo"],datoscdmx["linea_servicio"],datoscdmx["afluencia_total_preliminar"])
+fig2.show()
+
+
+
+
+#Numero de usuario por dia 
+
+
+datoscdmx.groupby("dia")["afluencia_total_preliminar"].sum().reset_index()
+
+
+#Que linea es la mas mas usada?   L1
+
+#Muestra el porcentaje de alfuencia total preliminar por linea de servicio
+
+linea=datoscdmx.groupby("linea_servicio")["afluencia_total_preliminar"].sum().reset_index()
+
+linea["Porcentage"]=0
+cont3=0
+for i in range (len(linea)):
+     
+     linea["Porcentage"].iloc[cont3]= linea["afluencia_total_preliminar"].iloc[cont3] / linea["afluencia_total_preliminar"].sum() * 100
+     
+     cont3+=1
+linea
+
+
+
+#Limpiamos todos los datos nulos
+#Hacemos el calculo del porcentaje de datos no nulos que nos quedaron en el data frame
+lon1=len(datoscdmx)
+nuevadata=datoscdmx.dropna(how="any").reset_index().drop("index",axis=1)
+lon2=len(datoscdmx.dropna(how="any").reset_index().drop("index",axis=1))
+per=lon2/lon1*100
+per
+
+
+
+#Se verifica a ver si hay datos duplicados en el nuevo data frame
+#No hay valores duplicados
+nuevadata.duplicated().sum()
+
+
+datoscdmx.info()
+
+
+#Cambiar el formato de la columna fecha ya que esta en objeto
+datoscdmx["fecha"]=pd.to_datetime(datoscdmx["fecha"], format= "%Y/%m/%d", errors='ignore')
+nuevadata["fecha"]=pd.to_datetime(nuevadata["fecha"], format= "%Y/%m/%d", errors='ignore')
+datoscdmx.info()
+nuevadata.info()
+
+
+
+
+#Imprimir el dia de cada registro de la columna fecha
+nuevadata["fecha"].dt.day
+
+
+
+#Imprimir el dia de la semana de cada registro de la columna fecha
+nuevadata["fecha"].dt.weekday
+
+
+
+#Cuantas filas contienen el organismo "Metrobús"
+datoscdmx["organismo"].str.contains("Metrobús").sum()
+
+
+##Cuantas filas contienen la Linea "Temporal"
+datoscdmx["linea_servicio"].str.contains("Temporal").sum()
+
+
+#Se crea el nuevo data frame para ver el historico de afluencia_total_preliminar 
+historico_grafica= datoscdmx.groupby("fecha")["afluencia_total_preliminar"].sum().reset_index()
+historico_grafica
+
+
+
+#Grafica de Afluencia X el Tiempo
+
+plt.rcParams["figure.figsize"] = (15,4) 
+
+plt.plot(historico_grafica["fecha"],historico_grafica["afluencia_total_preliminar"])
+plt.xticks(rotation=0)
+plt.xlabel("Fecha")
+plt.ylabel("Afluencia_Total_Preliminar")
+
+plt.title("Historico de Afluencia_Total_Preliminar")
+plt.show()
+
+
+
+
